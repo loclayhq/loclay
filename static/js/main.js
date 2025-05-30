@@ -33,7 +33,7 @@ async function smartSearch() {
     const gptResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer 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",
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
