@@ -1,6 +1,4 @@
 let allProducts = [];
-let selectedLocation = "";
-let selectedStores = ["Target", "Marshalls", "Burlington"];
 
 async function loadProducts() {
   try {
@@ -11,47 +9,81 @@ async function loadProducts() {
   }
 }
 
-function setLocation() {
-  const zipInput = document.getElementById("zipcode");
-  selectedLocation = zipInput.value.trim().toLowerCase();
-}
-
-function searchProducts() {
-  const searchInput = document.getElementById("searchInput").value.trim().toLowerCase();
+async function smartSearch() {
+  const query = document.getElementById("searchInput").value.trim();
   const listDiv = document.getElementById("product-list");
+  const zipInput = document.getElementById("zipcode").value.trim();
 
-  const storeCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-  selectedStores = Array.from(storeCheckboxes)
-    .filter(cb => cb.checked)
-    .map(cb => cb.value);
+  listDiv.innerHTML = "<p>Searching with AI...</p>";
 
-  listDiv.innerHTML = "";
+  try {
+    const gptResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer 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",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You're a shopping assistant. Extract structured product filters from a user query. Respond ONLY with a JSON object including: brand, category, price_limit, zip."
+          },
+          {
+            role: "user",
+            content: query
+          }
+        ]
+      })
+    });
 
-  const filtered = allProducts.filter((product, index) => {
-    const titleMatch = product.title.toLowerCase().includes(searchInput);
-    const locationMatch = selectedLocation === "" || product.store.toLowerCase().includes(selectedLocation);
-    const storeMatch = selectedStores.length === 0 || selectedStores.some(store =>
-      product.store.toLowerCase().includes(store.toLowerCase()));
-    return titleMatch && locationMatch && storeMatch;
-  });
+    const gptData = await gptResponse.json();
+    const content = gptData.choices[0].message.content;
 
-  if (filtered.length === 0) {
-    listDiv.innerHTML = "<p>No matching products found.</p>";
-    return;
+    const filters = JSON.parse(content);
+    const zip = filters.zip?.toLowerCase() || "";
+    const category = filters.category?.toLowerCase() || "";
+    const brand = filters.brand?.toLowerCase() || "";
+    const priceLimit = parseFloat(filters.price_limit) || 9999;
+
+    const filtered = allProducts.filter(product => {
+      const title = product.title.toLowerCase();
+      const store = product.store.toLowerCase();
+      const price = parseFloat(product.price.replace('$', '')) || 0;
+
+      return (
+        title.includes(brand) &&
+        title.includes(category) &&
+        store.includes(zip) &&
+        price <= priceLimit
+      );
+    });
+
+    listDiv.innerHTML = "";
+
+    if (filtered.length === 0) {
+      listDiv.innerHTML = "<p>No matching products found.</p>";
+      return;
+    }
+
+    filtered.forEach((product, i) => {
+      const card = document.createElement("div");
+      card.className = "product-card";
+      card.innerHTML = `
+        <a href="/product.html?id=${i}" style="text-decoration: none; color: inherit;">
+          <img src="${product.image}" alt="${product.title}" />
+          <h3>${product.title}</h3>
+          <p class="price">${product.price}</p>
+        </a>
+      `;
+      listDiv.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error("AI search failed:", err);
+    listDiv.innerHTML = "<p>Something went wrong with AI search.</p>";
   }
-
-  filtered.forEach((product, i) => {
-    const card = document.createElement("div");
-    card.className = "product-card";
-    card.innerHTML = `
-      <a href="/product.html?id=${i}" style="text-decoration: none; color: inherit;">
-        <img src="${product.image}" alt="${product.title}" />
-        <h3>${product.title}</h3>
-        <p class="price">${product.price}</p>
-      </a>
-    `;
-    listDiv.appendChild(card);
-  });
 }
 
 document.addEventListener("DOMContentLoaded", loadProducts);
