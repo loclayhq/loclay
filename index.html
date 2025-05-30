@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Loclay</title>
+  <link rel="stylesheet" href="/static/css/main.css" />
+  <link rel="icon" type="image/png" href="/basket-icon.png" />
+</head>
+<body>
+  <header class="top-bar">
+    <img src="/logo.png" alt="Loclay Logo" class="logo" />
+    <div class="search-container">
+      <input type="text" id="zipcode" placeholder="Enter ZIP code" />
+      <button onclick="setLocation()">Set Location</button>
+      <input type="text" id="searchInput" placeholder="Search for items..." />
+      <button onclick="searchProducts()">Search</button>
+      <select id="sortOption" onchange="searchProducts()">
+        <option value="">Sort by</option>
+        <option value="price-asc">Price: Low to High</option>
+        <option value="price-desc">Price: High to Low</option>
+        <option value="store-asc">Store: A to Z</option>
+      </select>
+    </div>
+    <!-- Store filters hidden
+    <div class="filters" style="display: none;">
+      <label><input type="checkbox" value="Target" checked /> Target</label>
+      <label><input type="checkbox" value="Marshalls" checked /> Marshalls</label>
+      <label><input type="checkbox" value="Burlington" checked /> Burlington</label>
+    </div>
+    -->
+  </header>
+
+  <div class="ads-bar">
+    <span>🔥</span>
+    <span>🛍️</span>
+    <span>🛒</span>
+  </div>
+
+  <nav class="category-nav">
+    <a href="#">Men</a>
+    <a href="#">Women</a>
+    <a href="#">Kids</a>
+    <a href="#">Home</a>
+  </nav>
+
+  <div id="loader" class="loader" style="display: none;">Loading...</div>
+  <main id="product-list" class="product-grid"></main>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>
