@@ -9,6 +9,12 @@ async function loadProducts() {
   }
 }
 
+function normalize(value) {
+  if (!value) return "";
+  const val = value.toString().toLowerCase().trim();
+  return val === "none" || val === "null" ? "" : val;
+}
+
 async function smartSearch() {
   const query = document.getElementById("searchInput").value.trim();
   const zipInput = document.getElementById("zipcode").value.trim().toLowerCase();
@@ -16,21 +22,18 @@ async function smartSearch() {
 
   listDiv.innerHTML = "<p>Searching with AI...</p>";
 
-  // If no query at all, fallback to ZIP or show all
   if (!query) {
-    const filtered = allProducts.filter(product => {
-      const store = product.store.toLowerCase();
-      return zipInput === "" || store.includes(zipInput);
+    const fallback = allProducts.filter(product => {
+      return zipInput === "" || product.store.toLowerCase().includes(zipInput);
     });
-
-    return renderResults(filtered);
+    return renderResults(fallback);
   }
 
   try {
     const gptResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": "Bearer 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",
+        "Authorization": "Bearer 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",
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -50,12 +53,15 @@ async function smartSearch() {
 
     const gptData = await gptResponse.json();
     const content = gptData.choices[0].message.content;
+    console.log("🧠 GPT Raw:", content);
 
     const filters = JSON.parse(content);
-    const zip = filters.zip?.toLowerCase() || zipInput;
-    const category = filters.category?.toLowerCase() || "";
-    const brand = filters.brand?.toLowerCase() || "";
+    const brand = normalize(filters.brand);
+    const category = normalize(filters.category);
+    const zip = normalize(filters.zip) || zipInput;
     const priceLimit = parseFloat(filters.price_limit) || 9999;
+
+    console.log("✅ Parsed Filters:", { brand, category, zip, priceLimit });
 
     const filtered = allProducts.filter(product => {
       const title = product.title.toLowerCase();
@@ -73,7 +79,7 @@ async function smartSearch() {
     renderResults(filtered);
 
   } catch (err) {
-    console.error("AI search failed:", err);
+    console.error("❌ GPT Search Error:", err);
     listDiv.innerHTML = "<p>Something went wrong with AI search.</p>";
   }
 }
