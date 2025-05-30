@@ -27,15 +27,11 @@ function searchProducts() {
 
   listDiv.innerHTML = "";
 
-  const filtered = allProducts.filter(product => {
+  const filtered = allProducts.filter((product, index) => {
     const titleMatch = product.title.toLowerCase().includes(searchInput);
-    const storeMatch = selectedStores.length === 0 || selectedStores.some(store =>
-      product.store.toLowerCase().includes(store.toLowerCase())
-    );
-    
-    // New zip logic
     const locationMatch = selectedLocation === "" || product.store.toLowerCase().includes(selectedLocation);
-
+    const storeMatch = selectedStores.length === 0 || selectedStores.some(store =>
+      product.store.toLowerCase().includes(store.toLowerCase()));
     return titleMatch && locationMatch && storeMatch;
   });
 
@@ -44,13 +40,15 @@ function searchProducts() {
     return;
   }
 
-  filtered.forEach(product => {
+  filtered.forEach((product, i) => {
     const card = document.createElement("div");
     card.className = "product-card";
     card.innerHTML = `
-      <img src="${product.image}" alt="${product.title}" />
-      <h3>${product.title}</h3>
-      <p class="price">${product.price}</p>
+      <a href="/product.html?id=${i}" style="text-decoration: none; color: inherit;">
+        <img src="${product.image}" alt="${product.title}" />
+        <h3>${product.title}</h3>
+        <p class="price">${product.price}</p>
+      </a>
     `;
     listDiv.appendChild(card);
   });
