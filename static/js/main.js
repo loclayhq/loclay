@@ -11,10 +11,20 @@ async function loadProducts() {
 
 async function smartSearch() {
   const query = document.getElementById("searchInput").value.trim();
+  const zipInput = document.getElementById("zipcode").value.trim().toLowerCase();
   const listDiv = document.getElementById("product-list");
-  const zipInput = document.getElementById("zipcode").value.trim();
 
   listDiv.innerHTML = "<p>Searching with AI...</p>";
+
+  // If no query at all, fallback to ZIP or show all
+  if (!query) {
+    const filtered = allProducts.filter(product => {
+      const store = product.store.toLowerCase();
+      return zipInput === "" || store.includes(zipInput);
+    });
+
+    return renderResults(filtered);
+  }
 
   try {
     const gptResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -42,7 +52,7 @@ async function smartSearch() {
     const content = gptData.choices[0].message.content;
 
     const filters = JSON.parse(content);
-    const zip = filters.zip?.toLowerCase() || "";
+    const zip = filters.zip?.toLowerCase() || zipInput;
     const category = filters.category?.toLowerCase() || "";
     const brand = filters.brand?.toLowerCase() || "";
     const priceLimit = parseFloat(filters.price_limit) || 9999;
@@ -53,37 +63,42 @@ async function smartSearch() {
       const price = parseFloat(product.price.replace('$', '')) || 0;
 
       return (
-        title.includes(brand) &&
-        title.includes(category) &&
-        store.includes(zip) &&
+        (brand === "" || title.includes(brand)) &&
+        (category === "" || title.includes(category)) &&
+        (zip === "" || store.includes(zip)) &&
         price <= priceLimit
       );
     });
 
-    listDiv.innerHTML = "";
-
-    if (filtered.length === 0) {
-      listDiv.innerHTML = "<p>No matching products found.</p>";
-      return;
-    }
-
-    filtered.forEach((product, i) => {
-      const card = document.createElement("div");
-      card.className = "product-card";
-      card.innerHTML = `
-        <a href="/product.html?id=${i}" style="text-decoration: none; color: inherit;">
-          <img src="${product.image}" alt="${product.title}" />
-          <h3>${product.title}</h3>
-          <p class="price">${product.price}</p>
-        </a>
-      `;
-      listDiv.appendChild(card);
-    });
+    renderResults(filtered);
 
   } catch (err) {
     console.error("AI search failed:", err);
     listDiv.innerHTML = "<p>Something went wrong with AI search.</p>";
   }
+}
+
+function renderResults(products) {
+  const listDiv = document.getElementById("product-list");
+  listDiv.innerHTML = "";
+
+  if (products.length === 0) {
+    listDiv.innerHTML = "<p>No matching products found.</p>";
+    return;
+  }
+
+  products.forEach((product, i) => {
+    const card = document.createElement("div");
+    card.className = "product-card";
+    card.innerHTML = `
+      <a href="/product.html?id=${i}" style="text-decoration: none; color: inherit;">
+        <img src="${product.image}" alt="${product.title}" />
+        <h3>${product.title}</h3>
+        <p class="price">${product.price}</p>
+      </a>
+    `;
+    listDiv.appendChild(card);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", loadProducts);
