@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Details – Loclay</title>
+  <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+<body>
+  <div class="product-detail-container" style="padding: 20px;">
+    <a href="/index.html" style="text-decoration: none; color: #007bff;">← Back to Home</a>
+    <div id="product-detail" style="margin-top: 20px;"></div>
+  </div>
+
+  <script>
+    async function loadProduct() {
+      const params = new URLSearchParams(window.location.search);
+      const id = parseInt(params.get("id"));
+
+      if (isNaN(id)) {
+        document.getElementById("product-detail").innerHTML = "<p>Invalid product ID</p>";
+        return;
+      }
+
+      try {
+        const res = await fetch('/products.json');
+        const products = await res.json();
+        const product = products[id];
+
+        if (!product) {
+          document.getElementById("product-detail").innerHTML = "<p>Product not found</p>";
+          return;
+        }
+
+        document.getElementById("product-detail").innerHTML = `
+          <div style="text-align:center;">
+            <img src="${product.image}" alt="${product.title}" style="max-width: 300px; border-radius: 8px;" />
+            <h2 style="margin-top: 15px;">${product.title}</h2>
+            <p class="price" style="font-size: 1.2rem;">${product.price}</p>
+            <p class="store" style="color: #555;">Available at: ${product.store}</p>
+          </div>
+        `;
+      } catch (err) {
+        document.getElementById("product-detail").innerHTML = "<p>Failed to load product data</p>";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadProduct);
+  </script>
+</body>
+</html>
